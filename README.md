@@ -1,53 +1,32 @@
-[![Deploy to now](https://deploy.now.sh/static/button.svg)](https://deploy.now.sh/?repo=https://github.com/zeit/next.js/tree/master/examples/with-apollo)
-# Apollo Example
+# The idea behind the example
+Demonstrates a possible way to control which GraphQL queries execute via `getInitialProps`, which calls react-apollo's `getDataFromTree`.
 
-## Demo
+# Why you might want this
+`getDataFromTree` will execute _all_ queries and wait for them to return before the page is ready to render.  If your route can execute 5 possible queries you may identify only 1 or 2 of them that need to be rendered initially and the rest can be lazily fetched.
 
-https://next-with-apollo.now.sh
-
-## How to use
-
-### Using `create-next-app`
-
-Execute [`create-next-app`](https://github.com/segmentio/create-next-app) with [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/) or [npx](https://github.com/zkat/npx#readme) to bootstrap the example:
-
-```bash
-npx create-next-app --example with-apollo with-apollo-app
-# or
-yarn create next-app --example with-apollo with-apollo-app
+# How it works
+Using React's context API, a provider sets a boolean `isInitialProps` value.  This value is `false` by default but is set to `true` when the `getDataFromTree` function is called:
+```
+await getDataFromTree(
+ <App
+  {...appProps}
+  Component={Component}
+  router={router}
+  apolloState={apolloState}
+  apolloClient={apollo}
+  isInitialProps={true}
+ />
+)
 ```
 
-### Download manually
+Then anywhere in the component tree, a component can be wrapped in `withNextApollo` to conditionally skip the query if `isInitialProps` is true:
 
-Download the example [or clone the repo](https://github.com/zeit/next.js):
-
-```bash
-curl https://codeload.github.com/zeit/next.js/tar.gz/canary | tar -xz --strip=2 next.js-canary/examples/with-apollo
-cd with-apollo
 ```
-
-Install it and run:
-
-```bash
-npm install
-npm run dev
-# or
-yarn
-yarn dev
+export default withNextApollo(
+  graphql(allUsers, {
+    skip: ({ isInitialProps }) => {
+      return isInitialProps === true;
+    }
+  })(UserList)
+);
 ```
-
-Deploy it to the cloud with [now](https://zeit.co/now) ([download](https://zeit.co/download)):
-
-```bash
-now
-```
-
-## The idea behind the example
-
-[Apollo](http://dev.apollodata.com) is a GraphQL client that allows you to easily query the exact data you need from a GraphQL server. In addition to fetching and mutating data, Apollo analyzes your queries and their results to construct a client-side cache of your data, which is kept up to date as further queries and mutations are run, fetching more results from the server.
-
-In this simple example, we integrate Apollo seamlessly with Next by wrapping our *pages/_app.js* inside a [higher-order component (HOC)](https://facebook.github.io/react/docs/higher-order-components.html). Using the HOC pattern we're able to pass down a central store of query result data created by Apollo into our React component hierarchy defined inside each page of our Next application.
-
-On initial page load, while on the server and inside `getInitialProps`, we invoke the Apollo method,  [`getDataFromTree`](http://dev.apollodata.com/react/server-side-rendering.html#getDataFromTree). This method returns a promise; at the point in which the promise resolves, our Apollo Client store is completely initialized.
-
-This example relies on [graph.cool](https://www.graph.cool) for its GraphQL backend.
