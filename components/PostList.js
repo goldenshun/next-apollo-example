@@ -14,6 +14,7 @@ function PostList ({
     const areMorePosts = allPosts.length < _allPostsMeta.count
     return (
       <section>
+        <h2>Posts</h2>
         <ul>
           {allPosts.map((post, index) => (
             <li key={post.id}>
