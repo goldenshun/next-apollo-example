@@ -1,14 +1,17 @@
 import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
 import ErrorMessage from './ErrorMessage'
-import PostUpvoter from './PostUpvoter'
+import withNextApollo from '../lib/with-next-apollo';
 
-const POSTS_PER_PAGE = 10
+function UserList (props) {
+  const { data } = props;
 
-function PostList ({
-  data: { loading, error, allUsers },
-  loadMorePosts
-}) {
+  const isLoading = !data || data.loading;
+  if (isLoading) {
+    return 'Loading...';
+  }
+
+  const { error, allUsers } = data;
   if (error) return <ErrorMessage message='Error loading posts.' />
   if (allUsers && allUsers.length) {
     return (
@@ -64,7 +67,6 @@ function PostList ({
       </section>
     )
   }
-  return <div>Loading</div>
 }
 
 export const allUsers = gql`
@@ -76,4 +78,10 @@ export const allUsers = gql`
   }
 `;
 
-export default graphql(allUsers)(PostList)
+export default withNextApollo(
+  graphql(allUsers, {
+    skip: ({ isInitialProps }) => {
+      return isInitialProps === true;
+    }
+  })(UserList)
+);
